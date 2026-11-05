@@ -6,10 +6,29 @@
 .holiday-item{background:#fff1f4;color:#c44b6c;border-left-color:#f2a4b9!important}
 .day{cursor:pointer}.day .event{line-height:1.4}
 #grid.expanded{overflow-y:auto}
-</style><header><nav><button id="prev">◀</button><strong id="title"></strong><button id="next">▶</button><button id="today">今日</button></nav></header><div class="week" id="week"></div><div class="grid" id="grid"></div><button class="toggle" id="toggle">▼ カレンダーを広げる</button><div class="agenda" id="agenda"></div><div class="backupbar"><button id="export">📤 バックアップ保存</button><button id="import">📥 バックアップ復元</button><input id="backupfile" type="file" accept=".json,application/json" hidden></div><button class="fab" id="add">＋ 予定</button><div class="shade" id="shade"><div class="sheet"><h2>🌸 予定を登録・編集</h2><label>いつもの予定（ワンタップ）</label><div class="quick" id="quick"></div><label>日付</label><input type="date" id="date"><label>予定名</label><input id="name" placeholder="例：書道"><label>時間（任意）</label><input type="time" id="time"><label>誰の予定？</label><select id="person"></select><label>アイコン</label><select id="icon"></select><label>繰り返し</label><select id="repeat"><option value="none">なし</option><option value="weekly">毎週</option><option value="monthly">毎月</option><option value="yearly">毎年</option><option value="daily">毎日</option></select><div class="row"><button id="delete">削除</button><button class="save" id="save">保存 ♡</button><button id="close">閉じる</button></div><p class="muted">予定はこの端末に保存されます。バックアップは画面下部から保存・復元できます。</p></div></div><script>
-const $=x=>document.getElementById(x),P=[['ひーちゃん','#ffc1d5'],['かーくん','#b6e1ff'],['自分','#dec8ff'],['夫','#c6eec9'],['家族','#ffe0a6']],I=[['小学校','🏫'],['中学校','🏫'],['書道','🖌️'],['着付け','👘'],['病院','🏥'],['旅行','✈️'],['飲み会','🍻'],['部活','🎒'],['美容院','✂️'],['買い物','🛒'],['誕生日','🎂'],['その他','🌼']];let events=[];try{events=JSON.parse(localStorage.getItem('popcal-v1')||'[]')}catch{}let v=new Date(),big=localStorage.getItem('popcal-expanded')==='1',edit=null;v.setDate(1);const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,date=s=>new Date(s+'T12:00:00'),color=p=>P.find(x=>x[0]===p)?.[1]||'#ddd',esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function match(e,d){let a=date(e.date),b=date(d);if(b<a)return false;if(e.repeat==='daily')return true;if(e.repeat==='weekly')return Math.round((b-a)/86400000)%7===0;if(e.repeat==='monthly')return a.getDate()===b.getDate();if(e.repeat==='yearly')return a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();return e.date===d}function get(d){return events.filter(e=>match(e,d)).sort((a,b)=>(a.time||'99').localeCompare(b.time||'99'))}
-const iconIndex={'🏫':0,'🖌️':8,'👘':9,'🏥':10,'✈️':16,'🍻':27,'🎒':3,'✂️':12,'🛒':19,'🎂':22,'🌼':23};
-const iconHtml=e=>`<img src="icon${iconIndex[e.icon]??23}.webp" alt="">`;
+.new-icon{font-size:15px;vertical-align:middle;margin-right:2px}.item .new-icon{font-size:23px}</style><header><nav><button id="prev">◀</button><strong id="title"></strong><button id="next">▶</button><button id="today">今日</button></nav></header><div class="week" id="week"></div><div class="grid" id="grid"></div><button class="toggle" id="toggle">▼ カレンダーを広げる</button><div class="agenda" id="agenda"></div><div class="backupbar"><button id="export">📤 バックアップ保存</button><button id="import">📥 バックアップ復元</button><input id="backupfile" type="file" accept=".json,application/json" hidden></div><button class="fab" id="add">＋ 予定</button><div class="shade" id="shade"><div class="sheet"><h2>🌸 予定を登録・編集</h2><label>いつもの予定（ワンタップ）</label><div class="quick" id="quick"></div><label>日付</label><input type="date" id="date"><label>予定名</label><input id="name" placeholder="例：書道"><label>時間（任意）</label><input type="time" id="time"><label>誰の予定？</label><select id="person"></select><label>アイコン</label><select id="icon"></select><label>繰り返し</label><select id="repeat"><option value="none">なし</option><option value="weekly">毎週</option><option value="biweekly">隔週（2週間ごと）</option><option value="nthweekday">毎月 第○曜日（登録日を基準）</option><option value="monthly">毎月</option><option value="yearly">毎年</option><option value="daily">毎日</option></select><div id="scopebox" style="display:none"><label>繰り返し予定の変更範囲</label><select id="scope"><option value="one">この日だけ</option><option value="future">この日以降すべて</option></select></div><div class="row"><button id="delete">削除</button><button class="save" id="save">保存 ♡</button><button id="close">閉じる</button></div><p class="muted">予定はこの端末に保存されます。バックアップは画面下部から保存・復元できます。</p></div></div><script>
+const $=x=>document.getElementById(x),P=[['ひーちゃん','#ffc1d5'],['かーくん','#b6e1ff'],['自分','#dec8ff'],['夫','#c6eec9'],['家族','#ffe0a6'],['子供たち','#f7d3aa']],I=[['小学校','🏫'],['中学校','🏫'],['書道','🖌️'],['着付け','👘'],['病院','🏥'],['旅行','✈️'],['飲み会','🍻'],['部活','🎒'],['美容院','✂️'],['買い物','🛒'],['誕生日','🎂'],['カラー','🎨'],['カットとカラー','💇'],['ゴールデンレトリバー','🐕'],['遊び','🎈'],['その他','🌼']];let events=[];try{events=JSON.parse(localStorage.getItem('popcal-v1')||'[]')}catch{}let v=new Date(),big=localStorage.getItem('popcal-expanded')==='1',edit=null;v.setDate(1);const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,date=s=>new Date(s+'T12:00:00'),color=p=>P.find(x=>x[0]===p)?.[1]||'#ddd',esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function nthInMonth(d){return Math.ceil(d.getDate()/7)}
+function match(e,d){
+ const a=date(e.date),b=date(d);if(b<a)return false;
+ if(e.until&&d>=e.until)return false;
+ const days=Math.round((b-a)/86400000);
+ let ok=false;
+ if(e.repeat==='daily')ok=true;
+ else if(e.repeat==='weekly')ok=days%7===0;
+ else if(e.repeat==='biweekly')ok=days%14===0;
+ else if(e.repeat==='monthly')ok=a.getDate()===b.getDate();
+ else if(e.repeat==='nthweekday')ok=a.getDay()===b.getDay()&&nthInMonth(a)===nthInMonth(b);
+ else if(e.repeat==='yearly')ok=a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+ else ok=e.date===d;
+ return ok && !(e.excluded||[]).includes(d);
+}
+function get(d){
+ const matched=events.filter(e=>match(e,d)).map(e=>({...e,occurrence:d,seriesId:e.id}));
+ const exceptions=events.filter(e=>e.overrideDate===d).map(e=>({...e,occurrence:d,seriesId:e.id}));
+ return [...matched,...exceptions].sort((a,b)=>(a.time||'99').localeCompare(b.time||'99'));
+}
+const iconIndex={'🏫':0,'🖌️':8,'👘':9,'🏥':10,'✈️':16,'🍻':27,'🎒':3,'✂️':12,'🛒':19,'🎂':22,'🌼':23,'🎨':12,'💇':12};
+const iconHtml=e=>iconIndex[e.icon]===undefined?`<span class="new-icon">${esc(e.icon)}</span>`:`<img src="icon${iconIndex[e.icon]}.webp" alt="">`;
 const nthMonday=(y,m,n)=>{let d=new Date(y,m-1,1),first=1+(8-d.getDay())%7;return first+7*(n-1)};
 const equinox=(y,spring)=>Math.floor((spring?20.8431:23.2488)+(spring?0.242194:0.242194)*(y-1980)-Math.floor((y-1980)/4));
 function holidays(y){
@@ -46,15 +65,74 @@ function render(){
   if(inside&&(items.length||isHoliday)){
    rows+=`<div class="datehead">${m+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）</div>`;
    if(isHoliday)rows+=`<div class="item holiday-item">🎌 <b>${esc(hol[s])}</b></div>`;
-   rows+=items.map(e=>`<div class="item" data-id="${e.id}" style="border-left-color:${color(e.person)}">${iconHtml(e)} <b>${esc(e.name)}</b><br><small>${e.time||'終日'} ・ ${esc(e.person)}</small></div>`).join('');
+   rows+=items.map(e=>`<div class="item" data-id="${e.id}" data-occurrence="${e.occurrence}" style="border-left-color:${color(e.person)}">${iconHtml(e)} <b>${esc(e.name)}</b><br><small>${e.time?esc(e.time)+' ・ ':''}${esc(e.person)}</small></div>`).join('');
   }
  }
  $('grid').innerHTML=cells;$('grid').classList.toggle('expanded',big);
  $('agenda').style.display=big?'none':'block';$('agenda').innerHTML=rows;
  $('toggle').textContent=big?'▲ 縮めて一覧を見る':'▼ カレンダーを広げる';
 }
-function open(d=iso(new Date()),id=null){edit=id;let e=events.find(x=>x.id===id);$('date').value=e?.date||d;$('name').value=e?.name||'';$('time').value=e?.time||'';$('person').value=e?.person||'自分';$('icon').value=e?.icon||'🌼';$('repeat').value=e?.repeat||'none';$('delete').style.visibility=id?'visible':'hidden';$('shade').classList.add('on')}$('person').innerHTML=P.map(p=>`<option>${p[0]}</option>`).join('');$('icon').innerHTML=I.map(x=>`<option value="${x[1]}">${x[1]} ${x[0]}</option>`).join('');$('quick').innerHTML=I.slice(0,7).map((x,i)=>`<button data-i="${i}">${x[1]}${x[0]}</button>`).join('');$('quick').onclick=e=>{let b=e.target.closest('[data-i]');if(b){let x=I[+b.dataset.i];$('name').value=x[0];$('icon').value=x[1]}};$('grid').onclick=e=>{let c=e.target.closest('[data-date]');if(c)open(c.dataset.date)};$('agenda').onclick=e=>{let c=e.target.closest('[data-id]');if(c)open(undefined,c.dataset.id)};$('save').onclick=()=>{let name=$('name').value.trim();if(!name||!$('date').value)return alert('日付と予定名を入力してね');let o={id:edit||String(Date.now()),date:$('date').value,name,time:$('time').value,person:$('person').value,icon:$('icon').value,repeat:$('repeat').value};events=edit?events.map(e=>e.id===edit?o:e):[...events,o];localStorage.setItem('popcal-v1',JSON.stringify(events));v=date(o.date);v.setDate(1);$('shade').classList.remove('on');render()};$('delete').onclick=()=>{if(confirm('この予定を削除する？')){events=events.filter(e=>e.id!==edit);localStorage.setItem('popcal-v1',JSON.stringify(events));$('shade').classList.remove('on');render()}};$('close').onclick=()=>$('shade').classList.remove('on');$('add').onclick=()=>open();$('toggle').onclick=()=>{big=!big;localStorage.setItem('popcal-expanded',big?'1':'0');render()};$('prev').onclick=()=>{v.setMonth(v.getMonth()-1);render()};$('next').onclick=()=>{v.setMonth(v.getMonth()+1);render()};$('today').onclick=()=>{v=new Date();v.setDate(1);render()};$('export').onclick=()=>{try{const payload={app:'ほのぼのカレンダー',version:1,exportedAt:new Date().toISOString(),events};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ほのぼのカレンダー_バックアップ_'+iso(new Date())+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)}catch(err){alert('保存できませんでした。もう一度試してね。')}};
+let occurrence=null;
+function persist(){localStorage.setItem('popcal-v1',JSON.stringify(events))}
+function open(d=iso(new Date()),id=null,occ=null){
+ edit=id;let e=events.find(x=>x.id===id);occurrence=occ||e?.date||d;
+ $('date').value=occurrence;
+ $('name').value=e?.name||'';$('time').value=e?.time||'';
+ $('person').value=e?.person||'自分';$('icon').value=e?.icon||'🌼';
+ $('repeat').value=e?.repeat||'none';$('delete').style.visibility=id?'visible':'hidden';
+ $('scopebox').style.display=e&&e.repeat!=='none'?'block':'none';$('scope').value='one';
+ $('shade').classList.add('on');
+}
+$('person').innerHTML=P.map(p=>`<option>${p[0]}</option>`).join('');
+$('icon').innerHTML=I.map(x=>`<option value="${x[1]}">${x[1]} ${x[0]}</option>`).join('');
+$('quick').innerHTML=I.map((x,i)=>`<button data-i="${i}">${x[1]}${x[0]}</button>`).join('');
+$('quick').onclick=e=>{let b=e.target.closest('[data-i]');if(b){let x=I[+b.dataset.i];$('name').value=x[0];$('icon').value=x[1]}};
+$('grid').onclick=e=>{let c=e.target.closest('[data-date]');if(c)open(c.dataset.date)};
+$('agenda').onclick=e=>{let c=e.target.closest('[data-id]');if(c)open(c.dataset.occurrence,c.dataset.id,c.dataset.occurrence)};
+const uid=()=>String(Date.now())+'-'+Math.random().toString(36).slice(2,9);
+$('save').onclick=()=>{
+ const name=$('name').value.trim(),selected=$('date').value;
+ if(!name||!selected)return alert('日付と予定名を入力してね');
+ let o={id:edit||uid(),date:selected,name,time:$('time').value,person:$('person').value,icon:$('icon').value,repeat:$('repeat').value};
+ let old=events.find(x=>x.id===edit);
+ if(old&&old.repeat!=='none'){
+   if($('scope').value==='one'){
+     // Keep the repeating series intact except this occurrence.
+     old.excluded=[...new Set([...(old.excluded||[]),occurrence])];
+     o.id=uid();o.repeat='none';o.date=selected;o.overrideDate=selected;
+     events.push(o);
+   }else{
+     // Close old series before selected occurrence; new series starts there.
+     if(occurrence===old.date){events=events.filter(x=>x.id!==old.id)}
+     else{old.until=occurrence;old.excluded=(old.excluded||[]).filter(x=>x<occurrence)}
+     o.id=uid();events.push(o);
+   }
+ }else if(old){
+   // Editing an individual exception or non-repeating event.
+   o.id=old.id;if(old.overrideDate)o.overrideDate=selected;
+   events=events.map(x=>x.id===old.id?o:x);
+ }else events.push(o);
+ persist();v=date(selected);v.setDate(1);$('shade').classList.remove('on');render();
+};
+$('delete').onclick=()=>{
+ let old=events.find(x=>x.id===edit);if(!old)return;
+ let recurring=old.repeat!=='none',future=recurring&&$('scope').value==='future';
+ let msg=recurring?(future?'この日以降の繰り返し予定を削除する？':'この日だけ削除する？'):'この予定を削除する？';
+ if(!confirm(msg))return;
+ if(recurring){
+   if(future){if(occurrence===old.date)events=events.filter(x=>x.id!==old.id);else old.until=occurrence}
+   else old.excluded=[...new Set([...(old.excluded||[]),occurrence])];
+ }else events=events.filter(x=>x.id!==edit);
+ persist();$('shade').classList.remove('on');render();
+};
+$('close').onclick=()=>$('shade').classList.remove('on');
+$('add').onclick=()=>open();
+$('toggle').onclick=()=>{big=!big;localStorage.setItem('popcal-expanded',big?'1':'0');render()};
+$('prev').onclick=()=>{v.setMonth(v.getMonth()-1);render()};
+$('next').onclick=()=>{v.setMonth(v.getMonth()+1);render()};
+$('today').onclick=()=>{v=new Date();v.setDate(1);render()};
+$('export').onclick=()=>{try{const payload={app:'ほのぼのカレンダー',version:1,exportedAt:new Date().toISOString(),events};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ほのぼのカレンダー_バックアップ_'+iso(new Date())+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)}catch(err){alert('保存できませんでした。もう一度試してね。')}};
 $('import').onclick=()=>$('backupfile').click();
-$('backupfile').onchange=async e=>{const f=e.target.files?.[0];e.target.value='';if(!f)return;try{if(f.size>5*1024*1024)throw Error('ファイルが大きすぎます');const data=JSON.parse(await f.text());if(data.app!=='ほのぼのカレンダー'||!Array.isArray(data.events))throw Error('ほのぼのカレンダーのバックアップファイルではありません');if(data.events.length>10000)throw Error('予定の件数が多すぎます');const safe=data.events.map(x=>{if(!x||typeof x!=='object'||typeof x.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(x.date)||!Number.isFinite(date(x.date).getTime())||typeof x.name!=='string'||!x.name.trim()||x.name.length>200)throw Error('予定データに不備があります');return {id:String(x.id||Date.now()+Math.random()),date:x.date,name:x.name,time:typeof x.time==='string'?x.time.slice(0,5):'',person:P.some(p=>p[0]===x.person)?x.person:'自分',icon:typeof x.icon==='string'?x.icon.slice(0,8):'🌼',repeat:['none','daily','weekly','monthly','yearly'].includes(x.repeat)?x.repeat:'none'}});if(!confirm('現在の予定 '+events.length+'件を、バックアップの '+safe.length+'件に置き換えます。\n今の予定を残したい場合は、先にバックアップ保存してね。\n復元しますか？'))return;localStorage.setItem('popcal-v1',JSON.stringify(safe));events=safe;render();alert('復元できたよ！')}catch(err){alert('復元できませんでした：'+err.message)}};
+$('backupfile').onchange=async e=>{const f=e.target.files?.[0];e.target.value='';if(!f)return;try{if(f.size>5*1024*1024)throw Error('ファイルが大きすぎます');const data=JSON.parse(await f.text());if(data.app!=='ほのぼのカレンダー'||!Array.isArray(data.events))throw Error('ほのぼのカレンダーのバックアップファイルではありません');if(data.events.length>10000)throw Error('予定の件数が多すぎます');const safe=data.events.map(x=>{if(!x||typeof x!=='object'||typeof x.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(x.date)||!Number.isFinite(date(x.date).getTime())||typeof x.name!=='string'||!x.name.trim()||x.name.length>200)throw Error('予定データに不備があります');return {id:String(x.id||Date.now()+Math.random()),date:x.date,name:x.name,time:typeof x.time==='string'?x.time.slice(0,5):'',person:P.some(p=>p[0]===x.person)?x.person:'自分',icon:typeof x.icon==='string'?x.icon.slice(0,8):'🌼',repeat:['none','daily','weekly','biweekly','nthweekday','monthly','yearly'].includes(x.repeat)?x.repeat:'none',until:typeof x.until==='string'?x.until:undefined,excluded:Array.isArray(x.excluded)?x.excluded.filter(s=>/^\d{4}-\d{2}-\d{2}$/.test(s)).slice(0,1000):[],overrideDate:typeof x.overrideDate==='string'?x.overrideDate:undefined}});if(!confirm('現在の予定 '+events.length+'件を、バックアップの '+safe.length+'件に置き換えます。\n今の予定を残したい場合は、先にバックアップ保存してね。\n復元しますか？'))return;localStorage.setItem('popcal-v1',JSON.stringify(safe));events=safe;render();alert('復元できたよ！')}catch(err){alert('復元できませんでした：'+err.message)}};
 render();
 </script></html>
