@@ -1,0 +1,142 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ff9bbd"><title>ほのぼのカレンダー</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon192.png"><style>*{box-sizing:border-box}body{margin:0;font-family:-apple-system,'Hiragino Kaku Gothic ProN',sans-serif;background:#fff9f5;color:#594457}header{padding:9px 13px;background:linear-gradient(120deg,#ffe0eb,#e7f8ee);text-align:center}h1{font-size:19px;margin:0;color:#a65780}nav{display:flex;justify-content:space-between;align-items:center;margin-top:9px}button{border:0;border-radius:20px;background:#fff;color:#a15b7c;padding:9px 13px;font-weight:800}nav strong{font-size:22px}.week,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}.week{background:#ffdeeb}.week span{text-align:center;padding:7px;font-size:12px;font-weight:800}.day{border:1px solid #f0e6ec;min-width:0;min-height:83px;background:white;padding:3px 2px;overflow:hidden}.day:nth-child(7n+1){background:#fff1f4}.day:nth-child(7n){background:#eff6ff}.day.out{opacity:.38}.day b{font-size:15px}.event{display:block;font-size:10px;padding:2px 1px;border-radius:5px;margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.expanded{height:calc(100dvh - 190px);grid-auto-rows:1fr}.toggle{display:block;margin:5px auto;background:#ffe2ed}.agenda{padding:8px 14px 80px}.agenda h2{font-size:17px;color:#a65780}.datehead{font-weight:900;font-size:13px;margin:16px 0 6px}.item{background:white;padding:10px;border-radius:12px;margin:5px 0;border-left:5px solid #ffa3c3;font-size:14px}.item small{color:#8b7887}.fab{position:fixed;bottom:16px;right:16px;background:#ff8fb5;color:white;box-shadow:0 4px 15px #bc8294;padding:14px}.shade{display:none;position:fixed;inset:0;background:#33223388;align-items:end;z-index:9}.shade.on{display:flex}.sheet{background:#fff9fc;border-radius:24px 24px 0 0;width:100%;max-height:92dvh;overflow:auto;padding:18px}.sheet h2{margin:0 0 12px}.sheet label{display:block;font-size:12px;font-weight:bold;margin-top:10px}.sheet input,.sheet select{width:100%;padding:11px;border:1px solid #ebcbd9;border-radius:10px;background:white;font-size:16px}.quick{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.quick button{background:#ffe4ed;padding:7px;font-size:12px}.row{display:flex;gap:8px;margin-top:16px}.row button{flex:1}.save{background:#ff8fb5;color:white}.muted{font-size:11px;color:#8b7887}.backupbar{display:flex;gap:8px;justify-content:center;padding:12px 12px 86px}.backupbar button{font-size:12px;background:#ffe2ed;border:1px solid #f5bfd2} 
+.day.holiday b{color:#df405b!important}.day.sunday b{color:#df405b}.day.saturday b{color:#327bd0}
+.day.today{outline:2px solid #f5a1bf;outline-offset:-2px}
+.event img,.item img{width:17px;height:15px;object-fit:contain;vertical-align:middle;margin-right:2px}
+.item img{width:27px;height:24px}
+.holiday-item{background:#fff1f4;color:#c44b6c;border-left-color:#f2a4b9!important}
+.day{cursor:pointer}.day .event{line-height:1.4}
+#grid.expanded{overflow-y:auto}
+.new-icon{font-size:15px;vertical-align:middle;margin-right:2px}.item .new-icon{font-size:23px}</style><header><nav><button id="prev">◀</button><strong id="title"></strong><button id="next">▶</button><button id="today">今日</button></nav></header><div class="week" id="week"></div><div class="grid" id="grid"></div><button class="toggle" id="toggle">▼ カレンダーを広げる</button><div class="agenda" id="agenda"></div><div class="backupbar"><button id="export">📤 バックアップ保存</button><button id="import">📥 バックアップ復元</button><input id="backupfile" type="file" accept=".json,application/json" hidden></div><button class="fab" id="add">＋ 予定</button><div class="shade" id="shade"><div class="sheet"><h2>🌸 予定を登録・編集</h2><label>いつもの予定（ワンタップ）</label><div class="quick" id="quick"></div><label>日付</label><input type="date" id="date"><label>予定名</label><input id="name" placeholder="例：書道"><label>時間（任意）</label><input type="time" id="time"><label>誰の予定？</label><select id="person"></select><label>アイコン</label><select id="icon"></select><label>繰り返し</label><select id="repeat"><option value="none">なし</option><option value="weekly">毎週</option><option value="biweekly">隔週（2週間ごと）</option><option value="nthweekday">毎月 第○曜日（登録日を基準）</option><option value="monthly">毎月</option><option value="yearly">毎年</option><option value="daily">毎日</option></select><div id="scopebox" style="display:none"><label>繰り返し予定の変更範囲</label><select id="scope"><option value="one">この日だけ</option><option value="future">この日以降すべて</option><option value="all">繰り返し予定をすべて削除</option></select></div><div class="row"><button id="delete">削除</button><button class="save" id="save">保存 ♡</button><button id="close">閉じる</button></div><p class="muted">予定はこの端末に保存されます。バックアップは画面下部から保存・復元できます。</p></div></div><script>
+const $=x=>document.getElementById(x),P=[['ひーちゃん','#ffc1d5'],['かーくん','#b6e1ff'],['自分','#dec8ff'],['夫','#c6eec9'],['家族','#ffe0a6'],['子供たち','#f7d3aa']],I=[['小学校','🏫'],['中学校','🏫'],['書道','🖌️'],['着付け','👘'],['病院','🏥'],['旅行','✈️'],['飲み会','🍻'],['部活','🎒'],['美容院','✂️'],['買い物','🛒'],['誕生日','🎂'],['カラー','🎨'],['カットとカラー','💇'],['ゴールデンレトリバー','🐕'],['遊び','🎈'],['その他','🌼']];let events=[];try{events=JSON.parse(localStorage.getItem('popcal-v1')||'[]')}catch{}let v=new Date(),big=localStorage.getItem('popcal-expanded')==='1',edit=null;v.setDate(1);const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,date=s=>new Date(s+'T12:00:00'),color=p=>P.find(x=>x[0]===p)?.[1]||'#ddd',esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function nthInMonth(d){return Math.ceil(d.getDate()/7)}
+function match(e,d){
+ const a=date(e.date),b=date(d);if(b<a)return false;
+ if(e.until&&d>=e.until)return false;
+ const days=Math.round((b-a)/86400000);
+ let ok=false;
+ if(e.repeat==='daily')ok=true;
+ else if(e.repeat==='weekly')ok=days%7===0;
+ else if(e.repeat==='biweekly')ok=days%14===0;
+ else if(e.repeat==='monthly')ok=a.getDate()===b.getDate();
+ else if(e.repeat==='nthweekday')ok=a.getDay()===b.getDay()&&nthInMonth(a)===nthInMonth(b);
+ else if(e.repeat==='yearly')ok=a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+ else ok=e.date===d;
+ return ok && !(e.excluded||[]).includes(d);
+}
+function get(d){
+ const matched=events.filter(e=>match(e,d)).map(e=>({...e,occurrence:d,seriesId:e.id}));
+ const exceptions=events.filter(e=>e.overrideDate===d).map(e=>({...e,occurrence:d,seriesId:e.id}));
+ return [...matched,...exceptions].sort((a,b)=>(a.time||'99').localeCompare(b.time||'99'));
+}
+const iconIndex={'🏫':0,'🖌️':8,'👘':9,'🏥':10,'✈️':16,'🍻':27,'🎒':3,'✂️':12,'🛒':19,'🎂':22,'🌼':23,'🎨':12,'💇':12};
+const iconHtml=e=>iconIndex[e.icon]===undefined?`<span class="new-icon">${esc(e.icon)}</span>`:`<img src="icon${iconIndex[e.icon]}.webp" alt="">`;
+const nthMonday=(y,m,n)=>{let d=new Date(y,m-1,1),first=1+(8-d.getDay())%7;return first+7*(n-1)};
+const equinox=(y,spring)=>Math.floor((spring?20.8431:23.2488)+(spring?0.242194:0.242194)*(y-1980)-Math.floor((y-1980)/4));
+function holidays(y){
+ const h={};const add=(m,d,n)=>{if(d>0&&d<=new Date(y,m,0).getDate())h[`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`]=n};
+ add(1,1,'元日');add(2,11,'建国記念の日');add(2,23,'天皇誕生日');add(4,29,'昭和の日');add(5,3,'憲法記念日');add(5,4,'みどりの日');add(5,5,'こどもの日');add(8,11,'山の日');add(11,3,'文化の日');add(11,23,'勤労感謝の日');
+ add(1,nthMonday(y,1,2),'成人の日');add(7,nthMonday(y,7,3),'海の日');add(9,nthMonday(y,9,3),'敬老の日');add(10,nthMonday(y,10,2),'スポーツの日');
+ add(3,equinox(y,true),'春分の日');add(9,equinox(y,false),'秋分の日');
+ // 国民の休日（祝日に挟まれた平日）
+ for(let d=new Date(y,0,2);d.getFullYear()===y;d.setDate(d.getDate()+1)){
+ const s=iso(d),a=new Date(d),b=new Date(d);a.setDate(a.getDate()-1);b.setDate(b.getDate()+1);
+ if(!h[s]&&h[iso(a)]&&h[iso(b)])h[s]='国民の休日';
+ }
+ // 振替休日：日曜に当たる祝日の次の非祝日
+ for(let d=new Date(y,0,1);d.getFullYear()===y;d.setDate(d.getDate()+1)){
+ if(d.getDay()===0&&h[iso(d)]){
+ let next=new Date(d);do{next.setDate(next.getDate()+1)}while(h[iso(next)]);
+ if(next.getFullYear()===y)h[iso(next)]='振替休日';
+ }
+ }
+ return h;
+}
+function render(){
+ let y=v.getFullYear(),m=v.getMonth(),start=new Date(y,m,1),offset=start.getDay(),n=Math.ceil((offset+new Date(y,m+1,0).getDate())/7)*7;
+ const hol={...holidays(y-1),...holidays(y),...holidays(y+1)};
+ start.setDate(1-offset);
+ $('title').textContent=`${y}年${m+1}月`;
+ $('week').innerHTML='日月火水木金土'.split('').map(x=>`<span>${x}</span>`).join('');
+ let cells='',rows=`<h2>📋 ${m+1}月の予定一覧</h2>`;
+ for(let j=0;j<n;j++){
+  let d=new Date(start);d.setDate(start.getDate()+j);
+  let s=iso(d),items=get(s),inside=d.getMonth()===m;
+  const isHoliday=!!hol[s],cls=[inside?'':'out',isHoliday?'holiday':'',d.getDay()===0?'sunday':'',d.getDay()===6?'saturday':'',s===iso(new Date())?'today':''].join(' ');
+  cells+=`<div class="day ${cls}" data-date="${s}"><b>${d.getDate()}</b>${items.slice(0,big?99:4).map(e=>`<span class="event" data-id="${esc(e.id)}" data-occurrence="${esc(e.occurrence)}" style="background:${color(e.person)}">${iconHtml(e)}${esc(e.name)}</span>`).join('')}${items.length>(big?99:4)?'<small>＋'+(items.length-4)+'件</small>':''}</div>`;
+  if(inside&&(items.length||isHoliday)){
+   rows+=`<div class="datehead">${m+1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）</div>`;
+   if(isHoliday)rows+=`<div class="item holiday-item">🎌 <b>${esc(hol[s])}</b></div>`;
+   rows+=items.map(e=>`<div class="item" data-id="${e.id}" data-occurrence="${e.occurrence}" style="border-left-color:${color(e.person)}">${iconHtml(e)} <b>${esc(e.name)}</b><br><small>${e.time?esc(e.time)+' ・ ':''}${esc(e.person)}</small></div>`).join('');
+  }
+ }
+ $('grid').innerHTML=cells;$('grid').classList.toggle('expanded',big);
+ $('agenda').style.display=big?'none':'block';$('agenda').innerHTML=rows;
+ $('toggle').textContent=big?'▲ 縮めて一覧を見る':'▼ カレンダーを広げる';
+}
+let occurrence=null;
+function persist(){localStorage.setItem('popcal-v1',JSON.stringify(events))}
+function open(d=iso(new Date()),id=null,occ=null){
+ edit=id;let e=events.find(x=>x.id===id);occurrence=occ||e?.date||d;
+ $('date').value=occurrence;
+ $('name').value=e?.name||'';$('time').value=e?.time||'';
+ $('person').value=e?.person||'自分';$('icon').value=e?.icon||'🌼';
+ $('repeat').value=e?.repeat||'none';$('delete').style.visibility=id?'visible':'hidden';
+ $('scopebox').style.display=e&&e.repeat!=='none'?'block':'none';$('scope').value='one';
+ $('shade').classList.add('on');
+}
+$('person').innerHTML=P.map(p=>`<option>${p[0]}</option>`).join('');
+$('icon').innerHTML=I.map(x=>`<option value="${x[1]}">${x[1]} ${x[0]}</option>`).join('');
+$('quick').innerHTML=I.map((x,i)=>`<button data-i="${i}">${x[1]}${x[0]}</button>`).join('');
+$('quick').onclick=e=>{let b=e.target.closest('[data-i]');if(b){let x=I[+b.dataset.i];$('name').value=x[0];$('icon').value=x[1]}};
+$('grid').onclick=e=>{let eventEl=e.target.closest('.event[data-id]');if(eventEl){open(eventEl.dataset.occurrence,eventEl.dataset.id,eventEl.dataset.occurrence);return}let c=e.target.closest('[data-date]');if(c)open(c.dataset.date)};
+$('agenda').onclick=e=>{let c=e.target.closest('[data-id]');if(c)open(c.dataset.occurrence,c.dataset.id,c.dataset.occurrence)};
+const uid=()=>String(Date.now())+'-'+Math.random().toString(36).slice(2,9);
+$('save').onclick=()=>{
+ const name=$('name').value.trim(),selected=$('date').value;
+ if(!name||!selected)return alert('日付と予定名を入力してね');
+ let o={id:edit||uid(),date:selected,name,time:$('time').value,person:$('person').value,icon:$('icon').value,repeat:$('repeat').value};
+ let old=events.find(x=>x.id===edit);
+ if(old&&old.repeat!=='none'){
+   if($('scope').value==='all'){alert('すべて削除する場合は「削除」ボタンを押してね');return;}
+    if($('scope').value==='one'){
+     // Keep the repeating series intact except this occurrence.
+     old.excluded=[...new Set([...(old.excluded||[]),occurrence])];
+     o.id=uid();o.repeat='none';o.date=selected;o.overrideDate=selected;o.parentSeriesId=old.id;
+     events.push(o);
+   }else{
+     // Close old series before selected occurrence; new series starts there.
+     if(occurrence===old.date){events=events.filter(x=>x.id!==old.id)}
+     else{old.until=occurrence;old.excluded=(old.excluded||[]).filter(x=>x<occurrence)}
+     o.id=uid();events.push(o);
+   }
+ }else if(old){
+   // Editing an individual exception or non-repeating event.
+   o.id=old.id;if(old.overrideDate)o.overrideDate=selected;
+   events=events.map(x=>x.id===old.id?o:x);
+ }else events.push(o);
+ persist();v=date(selected);v.setDate(1);$('shade').classList.remove('on');render();
+};
+$('delete').onclick=()=>{
+ let old=events.find(x=>x.id===edit);if(!old)return;
+ const recurring=old.repeat!=='none',scope=recurring?$('scope').value:'one';
+ const msg=recurring?(scope==='all'?'この繰り返し予定を過去・未来も含めてすべて削除する？':scope==='future'?'この日以降の繰り返し予定を削除する？':'この日だけ削除する？'):'この予定を削除する？';
+ if(!confirm(msg))return;
+ if(recurring){
+  if(scope==='all')events=events.filter(x=>x.id!==old.id&&x.parentSeriesId!==old.id);
+  else if(scope==='future'){
+   if(occurrence===old.date)events=events.filter(x=>x.id!==old.id&&x.parentSeriesId!==old.id);
+   else {old.until=occurrence;events=events.filter(x=>x.parentSeriesId!==old.id||x.date<occurrence)}
+  }else old.excluded=[...new Set([...(old.excluded||[]),occurrence])];
+ }else events=events.filter(x=>x.id!==edit);
+ persist();$('shade').classList.remove('on');render();
+};
+$('close').onclick=()=>$('shade').classList.remove('on');
+$('add').onclick=()=>open();
+$('toggle').onclick=()=>{big=!big;localStorage.setItem('popcal-expanded',big?'1':'0');render()};
+$('prev').onclick=()=>{v.setMonth(v.getMonth()-1);render()};
+$('next').onclick=()=>{v.setMonth(v.getMonth()+1);render()};
+$('today').onclick=()=>{v=new Date();v.setDate(1);render()};
+$('export').onclick=()=>{try{const payload={app:'ほのぼのカレンダー',version:1,exportedAt:new Date().toISOString(),events};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ほのぼのカレンダー_バックアップ_'+iso(new Date())+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)}catch(err){alert('保存できませんでした。もう一度試してね。')}};
+$('import').onclick=()=>$('backupfile').click();
+$('backupfile').onchange=async e=>{const f=e.target.files?.[0];e.target.value='';if(!f)return;try{if(f.size>5*1024*1024)throw Error('ファイルが大きすぎます');const data=JSON.parse(await f.text());if(data.app!=='ほのぼのカレンダー'||!Array.isArray(data.events))throw Error('ほのぼのカレンダーのバックアップファイルではありません');if(data.events.length>10000)throw Error('予定の件数が多すぎます');const safe=data.events.map(x=>{if(!x||typeof x!=='object'||typeof x.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(x.date)||!Number.isFinite(date(x.date).getTime())||typeof x.name!=='string'||!x.name.trim()||x.name.length>200)throw Error('予定データに不備があります');return {id:String(x.id||Date.now()+Math.random()),date:x.date,name:x.name,time:typeof x.time==='string'?x.time.slice(0,5):'',person:P.some(p=>p[0]===x.person)?x.person:'自分',icon:typeof x.icon==='string'?x.icon.slice(0,8):'🌼',repeat:['none','daily','weekly','biweekly','nthweekday','monthly','yearly'].includes(x.repeat)?x.repeat:'none',until:typeof x.until==='string'?x.until:undefined,excluded:Array.isArray(x.excluded)?x.excluded.filter(s=>/^\d{4}-\d{2}-\d{2}$/.test(s)).slice(0,1000):[],overrideDate:typeof x.overrideDate==='string'?x.overrideDate:undefined,parentSeriesId:typeof x.parentSeriesId==='string'?x.parentSeriesId:undefined}});if(!confirm('現在の予定 '+events.length+'件を、バックアップの '+safe.length+'件に置き換えます。\n今の予定を残したい場合は、先にバックアップ保存してね。\n復元しますか？'))return;localStorage.setItem('popcal-v1',JSON.stringify(safe));events=safe;render();alert('復元できたよ！')}catch(err){alert('復元できませんでした：'+err.message)}};
+render();
+</script></html>
